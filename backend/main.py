@@ -1,8 +1,12 @@
 from fastapi import FastAPI
+from api.routes_bets import router as bets_router
+from database.connection import Base, engine
 
-app = FastAPI()
+app = FastAPI(title="AI Parlay Backend")
+
+Base.metadata.create_all(bind=engine)
+app.include_router(bets_router)
 
 @app.get("/")
-
 def root():
     return {"message": "AI Parlay Backend is running"}
