@@ -1,13 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from database.connection import get_db
+import crud.crud as crud
+from schemas.schemas import Bet, BetCreate
 from typing import List
 
-router = APIRouter(prefix="/bets", tags = ["Bets"])
+router = APIRouter()
 
-@router.get("/")
-def get_bets():
-    return {"message": "List of all bets will appear here"}
+@router.get("/bets", response_model=List[Bet])
+def read_bets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_bets(db=db, skip=skip, limit=limit)
 
-@router.post("/")
-def add_bet():
-    return {"message":"New bet added successfully!"}
-
+@router.post("/bets", response_model=Bet)
+def create_new_bet(bet: BetCreate, db: Session = Depends(get_db)):
+    return crud.create_bet(db=db, bet=bet)
