@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from database.connection import get_db
 import crud.crud as crud
-from schemas.schemas import Bet, BetCreate
+from schemas.bet import Bet, BetCreate
 from typing import List
 
 router = APIRouter()
