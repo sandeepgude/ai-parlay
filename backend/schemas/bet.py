@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class BetBase(BaseModel):
     team_name: str
@@ -7,10 +6,10 @@ class BetBase(BaseModel):
     wager_amount: float
 
 class BetCreate(BetBase):
-    pass
+    pass  # user_id comes from auth, not the body
 
 class Bet(BetBase):
     id: int
+    user_id: int
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}

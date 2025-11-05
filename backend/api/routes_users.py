@@ -6,9 +6,8 @@ from schemas.user import UserCreate, UserResponse
 from utils.auth import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags = ["Authentication"])
+
 @router.post("/signup", response_model=UserResponse)
-
-
 def signup(user: UserCreate, db: Session = Depends(get_db)):
     # Check for existing email
     existing_email = db.query(User).filter(User.email == user.email).first()

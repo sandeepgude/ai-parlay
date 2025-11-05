@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from database.connection import Base
 
 class User(Base):
@@ -9,5 +10,5 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 
-    
-    
+   
+    bets = relationship("Bet", back_populates="user", cascade="all, delete-orphan")

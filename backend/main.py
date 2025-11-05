@@ -6,8 +6,9 @@ from database.connection import Base, engine
 app = FastAPI(title="AI Parlay Backend")
 
 Base.metadata.create_all(bind=engine)
-app.include_router(bets_router)
+
 app.include_router(auth_router)
+app.include_router(bets_router)
 
 @app.get("/")
 def root():

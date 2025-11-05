@@ -11,12 +11,12 @@ class UserCreate(BaseModel):
             raise ValueError("Password must be shorter than 72 characters")
         return v
 
-
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 class UserResponse(BaseModel):
     id: int
-    username:str
+    username: str
     email: EmailStr
-
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
