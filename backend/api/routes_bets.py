@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from typing import List
+from utils.response import success_response
 
 from database.connection import get_db
 import crud.crud as crud
@@ -25,4 +26,5 @@ def create_new_bet(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return crud.create_bet(db=db, bet=bet, user_id=current_user.id)
+    new_bet =  crud.create_bet(db=db, bet=bet, user_id=current_user.id)
+    return success_response("Bet created Successfully", new_bet)

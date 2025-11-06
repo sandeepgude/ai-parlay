@@ -1,0 +1,16 @@
+2025-11-06 06:36:54,469 - INFO - Database initialized
+2025-11-06 06:36:54,865 - INFO - Health check route called
+2025-11-06 06:37:34,112 - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/Users/sandeepgude/Desktop/AI-Parlay/.venv/lib/python3.14/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-11-06 06:49:09,786 - INFO - Database initialized
+2025-11-06 06:49:11,158 - INFO - Health check route called
+2025-11-06 06:50:47,473 - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/Users/sandeepgude/Desktop/AI-Parlay/.venv/lib/python3.14/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
