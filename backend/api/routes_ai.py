@@ -15,7 +15,7 @@ from crud.parlay import save_parlay
 from utils.json_utils import extract_json_block
 from utils.number_utils import to_float
 import json
-print(f"🔑 Using OpenAI API key prefix: {OPENAI_API_KEY}")
+
 router = APIRouter(prefix="/ai", tags=["AI"])
 client = OpenAI(api_key=OPENAI_API_KEY)
 

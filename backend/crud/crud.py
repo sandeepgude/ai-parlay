@@ -18,3 +18,4 @@ def create_bet(db: Session, bet: BetCreate, user_id: int):
     db.commit()
     db.refresh(db_bet)
     return db_bet
+

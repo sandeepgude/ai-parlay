@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import Home from "./components/Home";
-import Chat from "./components/Chat";
+import Home from "./pages/Home";
+import Chat from "./pages/Chat";
+import MyParlays from "./pages/MyParlays";
 
 export default function App() {
   return (
@@ -15,10 +16,24 @@ export default function App() {
         {/* Navigation Buttons */}
         <div className="flex gap-4">
           <Link to="/">
-            <Button variant="secondary">🏠 Home</Button>
+            <Button
+              className="cursor-pointer hover:scale-105 transition-transform"
+              variant="secondary"
+            >
+              🏠 Home
+            </Button>
           </Link>
           <Link to="/chat">
-            <Button>💬 Open Chat</Button>
+            <Button className="cursor-pointer hover:scale-105 transition-transform">
+              💬 Open Chat
+            </Button>
+          </Link>
+          <Link to="/my-parlays">
+            <Button
+            variant="outline"
+            className="cursor-pointer hover:scale-105 transition-transform text-gray-900">
+            📜 My Parlays
+          </Button>
           </Link>
         </div>
 
@@ -27,6 +42,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/chat" element={<Chat />} />
+            <Route path="/my-parlays" element={<MyParlays />} /> {/* ✅ Added */}
           </Routes>
         </div>
       </div>

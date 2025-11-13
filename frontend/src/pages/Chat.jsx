@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import axiosClient from "../api/axiosClient";
-import ParlayCard from "./ParlayCard";
+import ParlayCard from "../components/ParlayCard";
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
