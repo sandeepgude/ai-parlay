@@ -1,108 +1,94 @@
 import { useEffect, useState } from "react";
 import axiosClient from "../api/axiosClient";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, Eye } from "lucide-react";
 
 export default function MyParlays() {
   const [parlays, setParlays] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const userId = 1; // TODO: Replace with logged-in user ID later
 
-  // Fetch user's parlays
   useEffect(() => {
-    async function fetchParlays() {
-      try {
-        const res = await axiosClient.get(`/parlays/${userId}`);
-        setParlays(res.data.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load parlays.");
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchParlays();
   }, []);
 
-  // Delete a parlay
+  const fetchParlays = async () => {
+    try {
+      const res = await axiosClient.get("/parlays/all");
+      setParlays(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this parlay?")) return;
+    if (!confirm("Delete this parlay?")) return;
+
     try {
       await axiosClient.delete(`/parlays/${id}`);
       setParlays((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       console.error(err);
-      alert("Failed to delete parlay.");
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="animate-spin w-8 h-8 text-gray-400" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <p className="text-center text-red-400">{error}</p>;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white px-6 py-10">
-      <h1 className="text-3xl font-bold mb-6">📜 My Parlays</h1>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4">My Parlays</h1>
 
-      {parlays.length === 0 ? (
-        <p className="text-gray-400">No parlays yet. Go create one in Chat 💬</p>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {parlays.map((p) => (
-            <Card
-              key={p.id}
-              className="bg-gray-900 border border-gray-800 hover:border-gray-700 transition"
-            >
-              <CardHeader>
-                <h2 className="text-xl font-semibold">
-                  {p.sport?.toUpperCase() || "Unknown Sport"}
-                </h2>
-                <p className="text-sm text-gray-400">
-                  {new Date(p.created_at).toLocaleString()}
-                </p>
-              </CardHeader>
+      {loading && <p className="text-gray-400">Loading parlays...</p>}
 
-              <CardContent>
-                <p className="text-gray-300 mb-2">
-                  <span className="font-medium">Total Odds:</span>{" "}
-                  {p.total_odds || "N/A"}
-                </p>
-                <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                  {p.summary || "No summary available."}
-                </p>
-
-                <div className="flex justify-between">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="cursor-pointer hover:scale-105 transition-transform"
-                  >
-                    <Eye className="w-4 h-4 mr-1" /> View
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="cursor-pointer hover:scale-105 transition-transform"
-                    onClick={() => handleDelete(p.id)}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" /> Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {!loading && parlays.length === 0 && (
+        <p className="text-gray-400">No saved parlays yet.</p>
       )}
+
+      <div className="space-y-4">
+        {parlays.map((p) => (
+          <div key={p.id} className="rounded-xl border p-4 shadow-sm bg-white">
+
+            <div className="flex justify-between">
+              <div className="font-bold text-lg">Parlay #{p.id}</div>
+              <div className="text-sm text-blue-600">{p.sport}</div>
+            </div>
+
+            <div className="mt-2 space-y-1">
+              {p.legs.map((leg, i) => (
+                <div key={i} className="text-sm text-gray-700">
+                  • {leg.team ?? "Unknown"} — {leg.market ?? "N/A"} ({leg.odds})
+                  {leg.reason && (
+                    <div className="text-xs text-gray-500 ml-4">
+                      {leg.reason}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-2 text-sm">
+              <b>Total Odds:</b> {p.total_odds}  
+              <br />
+              <b>Payout:</b> ${p.potential_payout}
+            </div>
+
+            {p.ai_response && (
+              <div className="mt-3 text-xs text-gray-500 border-t pt-2">
+                AI Breakdown: {p.ai_response}
+              </div>
+            )}
+
+            <div className="text-xs text-gray-400 mt-2">
+              {new Date(p.created_at).toLocaleString()}
+            </div>
+
+            <button
+              onClick={() => handleDelete(p.id)}
+              className="text-red-600 text-sm mt-3 underline"
+            >
+              Delete
+            </button>
+
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

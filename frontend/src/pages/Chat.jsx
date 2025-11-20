@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import axiosClient from "../api/axiosClient";
 import ParlayCard from "../components/ParlayCard";
+import axiosClient from "../api/axiosClient";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
@@ -19,21 +19,26 @@ export default function Chat() {
   const chatEndRef = useRef(null);
   const streamAbortRef = useRef(null);
 
+  // Auto scroll to bottom
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       streamAbortRef.current?.abort();
     };
   }, []);
 
-  const streamReply = async (text, botMessageId) => {
+  // ============================================================
+  // 🔥 STREAM REPLY (Reads text + detects FINAL JSON)
+  // ============================================================
+  const streamReply = async (text, botMessageId, onFinalJson) => {
+    // Cancel ongoing stream
     streamAbortRef.current?.abort();
     const controller = new AbortController();
     streamAbortRef.current = controller;
@@ -52,56 +57,50 @@ export default function Chat() {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
 
+    let buffer = ""; // store EVERYTHING streamed
+
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
+
       const chunk = decoder.decode(value, { stream: true });
-      if (chunk) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === botMessageId
-              ? { ...msg, text: `${msg.text ?? ""}${chunk}` }
-              : msg
-          )
-        );
+      if (!chunk) continue;
+
+      buffer += chunk;
+
+      // Detect final JSON block from backend
+      if (buffer.includes("[[FINAL_JSON]]")) {
+        const start = buffer.indexOf("[[FINAL_JSON]]") + 14;
+        const end = buffer.indexOf("[[/FINAL_JSON]]");
+
+        if (end !== -1) {
+          const jsonStr = buffer.substring(start, end);
+          try {
+            const finalData = JSON.parse(jsonStr);
+            onFinalJson(finalData);
+          } catch (err) {
+            console.error("JSON parse error:", err);
+          }
+        }
+        continue; // skip streaming text during final JSON
       }
+
+      // Normal streaming text update
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === botMessageId
+            ? { ...msg, text: (msg.text ?? "") + chunk }
+            : msg
+        )
+      );
     }
 
     streamAbortRef.current = null;
   };
 
-  const fetchParlaySuggestion = async (text) => {
-    const res = await axiosClient.post("/ai/parlay", { message: text });
-    console.log("🎯 API Response:", res.data);
-
-    const rawText = res.data?.data?.raw_text
-      ?.replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    if (res.data?.data?.parsed_parlay) {
-      setMessages((prev) => [
-        ...prev,
-        { id: makeId(), sender: "bot", parlay: res.data.data.parsed_parlay },
-      ]);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(rawText);
-      setMessages((prev) => [
-        ...prev,
-        { id: makeId(), sender: "bot", parlay: parsed },
-      ]);
-    } catch {
-      const fallback = rawText || res.data?.message || "No reply received.";
-      setMessages((prev) => [
-        ...prev,
-        { id: makeId(), sender: "bot", text: fallback },
-      ]);
-    }
-  };
-
+  // ============================================================
+  // 🔥 SEND MESSAGE (stream + parse final parlay)
+  // ============================================================
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -115,10 +114,24 @@ export default function Chat() {
     setLoading(true);
 
     try {
-      await streamReply(messageText, botPlaceholder.id);
-      await fetchParlaySuggestion(messageText);
-    } catch (error) {
-      console.error("❌ Error during chat:", error);
+      // Stream + get final parlay JSON
+      await streamReply(messageText, botPlaceholder.id, (final) => {
+        console.log("🎯 FINAL STREAM JSON:", final);
+
+        if (final.parsed_parlay) {
+          // Replace placeholder with parlay UI
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botPlaceholder.id
+                ? { ...msg, parlay: final.parsed_parlay, text: "" }
+                : msg
+            )
+          );
+        }
+      });
+    } catch (err) {
+      console.error("❌ Chat error:", err);
+
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === botPlaceholder.id
@@ -135,16 +148,20 @@ export default function Chat() {
     }
   };
 
+  // ============================================================
+  // 🔥 RENDER UI
+  // ============================================================
   return (
     <div className="flex flex-col items-center h-screen bg-gray-50 p-4">
       <h1 className="text-2xl font-semibold mb-4">🎯 AI Parlay Assistant</h1>
 
       <div className="max-w-2xl w-full bg-white shadow-md rounded-xl flex flex-col p-4 overflow-y-auto flex-grow mb-4 border">
-        {messages.map((m, i) => (
+        {messages.map((m) => (
           <div
-            key={m.id ?? i}
+            key={m.id}
             className={`my-2 ${m.sender === "user" ? "text-right" : "text-left"}`}
           >
+            {/* If parlay exists → show card */}
             {m.sender === "bot" && m.parlay ? (
               <ParlayCard data={m.parlay} />
             ) : (
@@ -170,6 +187,7 @@ export default function Chat() {
         <div ref={chatEndRef} />
       </div>
 
+      {/* Input Box */}
       <form onSubmit={sendMessage} className="flex w-full max-w-2xl">
         <input
           className="flex-grow bg-gray-100 text-gray-900 border border-gray-300 rounded-l-xl p-3 outline-none focus:ring-2 focus:ring-blue-400"
