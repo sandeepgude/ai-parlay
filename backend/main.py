@@ -7,6 +7,9 @@ from api.routes_odds import router as odds_router
 from api.routes_ai import router as ai_router
 from api.routes_parlay import router as ai_parlay
 from database.connection import Base, engine
+# Import models to ensure tables are registered before create_all
+import models.team_stats  # noqa: F401
+import models.player_stats  # noqa: F401
 from utils.logger import logger
 from dotenv import load_dotenv
 

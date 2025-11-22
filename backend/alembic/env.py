@@ -18,7 +18,7 @@ except Exception:
 
 # import your SQLAlchemy Base and database URL
 from database.connection import Base, SQLALCHEMY_DATABASE_URL
-from models import user, bet, ai_log, game_odds,parlay
+from models import user, bet, ai_log, game_odds, parlay, player_stats, team_stats
 
 # -------------------------------------------------------------------
 # Alembic Config object, gives access to values in alembic.ini
