@@ -1,3 +1,5 @@
+import datetime as dt
+from zoneinfo import ZoneInfo
 from collections import defaultdict
 from typing import Iterable, Optional, List, Dict, Any
 
@@ -205,6 +207,37 @@ def normalize_odds_for_ai(raw_items: Iterable[Any]) -> List[Dict[str, Any]]:
     return normalized
 
 
+MOUNTAIN_TZ = ZoneInfo("America/Denver")
+
+
+def _is_today_commence(commence_time: Any) -> bool:
+    """Return True if commence_time is today in Mountain Time."""
+    if not commence_time:
+        return False
+    try:
+        if isinstance(commence_time, str):
+            ts = commence_time.replace("Z", "+00:00")
+            dt_obj = dt.datetime.fromisoformat(ts)
+        elif isinstance(commence_time, dt.datetime):
+            dt_obj = commence_time
+        elif isinstance(commence_time, dt.date):
+            return commence_time == dt.datetime.now(MOUNTAIN_TZ).date()
+        else:
+            return False
+
+        if dt_obj.tzinfo is None:
+            dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
+        local_dt = dt_obj.astimezone(MOUNTAIN_TZ)
+        return local_dt.date() == dt.datetime.now(MOUNTAIN_TZ).date()
+    except Exception:
+        return False
+
+
+def filter_today_odds(odds_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Filter odds to only games commencing today (UTC)."""
+    return [g for g in odds_data if _is_today_commence(g.get("commence_time"))]
+
+
 # ================================================================
 # 🔧 Helper: Build Team + Player stats for relevant games (Mode A)
 # ================================================================
@@ -297,6 +330,8 @@ async def parlay(request: ChatRequest, db: Session = Depends(get_db)):
 
     # 2️⃣ Normalize odds for AI
     odds_data = normalize_odds_for_ai(raw_odds)
+    odds_data = filter_today_odds(odds_data)
+    print(f"📅 Filtered to today's games: {len(odds_data)}")
     # keep prompt compact
     odds_data = odds_data[:15]  # limit games for prompt size
 
@@ -407,6 +442,8 @@ async def chat_stream(request: ChatRequest, db: Session = Depends(get_db)):
 
     # 2️⃣ Normalize odds
     odds_data = normalize_odds_for_ai(raw_odds)
+    odds_data = filter_today_odds(odds_data)
+    print(f"📅 Filtered to today's games (stream): {len(odds_data)}")
     # keep prompt compact to increase chance of clean JSON
     odds_data = odds_data[:45]
 
@@ -527,4 +564,3 @@ async def chat_stream(request: ChatRequest, db: Session = Depends(get_db)):
         yield f"\n\n[[FINAL_JSON]]{json.dumps(final_payload)}[[/FINAL_JSON]]"
 
     return StreamingResponse(generate(), media_type="text/plain")
-

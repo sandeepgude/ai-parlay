@@ -6,11 +6,16 @@ from api.routes_grok import router as grok_router
 from api.routes_odds import router as odds_router
 from api.routes_ai import router as ai_router
 from api.routes_parlay import router as ai_parlay
-from database.connection import Base, engine
+from database.connection import Base, engine, SessionLocal
 # Import models to ensure tables are registered before create_all
 import models.team_stats  # noqa: F401
 import models.player_stats  # noqa: F401
+import models.game  # noqa: F401
+import models.team_market  # noqa: F401
+import models.player_prop  # noqa: F401
 from utils.logger import logger
+from services.odds_service import get_odds_data
+import asyncio
 from dotenv import load_dotenv
 
 app = FastAPI(title="AI Parlay Assistant")
@@ -34,6 +39,26 @@ app.add_middleware(
 # Initialize DB
 Base.metadata.create_all(bind=engine)
 logger.info("✅ Database initialized")
+
+
+@app.on_event("startup")
+async def refresh_odds_background():
+    async def _loop():
+        while True:
+            try:
+                db = SessionLocal()
+                for sport in ("nba", "nfl"):
+                    await get_odds_data(db, sport, force_refresh=True)
+            except Exception as e:
+                logger.error(f"⚠️ Refresh loop error: {e}")
+            finally:
+                try:
+                    db.close()
+                except Exception:
+                    pass
+            await asyncio.sleep(900)  # ~15 minutes
+
+    asyncio.create_task(_loop())
 
 # Versioned routes
 app.include_router(auth_router, prefix="/api/v1")
